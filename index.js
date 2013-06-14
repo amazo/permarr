@@ -1,77 +1,41 @@
-function count()
-{
-    var number = parseInt(calc.number.value, 10);
-    var select = parseInt(calc.select.value, 10);
-
-    // check input
-    if (isNaN(number)||(number <= 0)||isNaN(select)||(select <= 0)||(select > number))
-    {
-        calc.permutations.value = "Error";
-        return;
-    }
-  
-    var c = Math.round(permutations(number, select));
-    calc.permutations.value = c;
-}
+var fs = require('fs');
 
 // list permutations in a separate window
-function listing()
+exports.create = function create(number, select)
 {
-    var number = parseInt(calc.number.value);
-    var select = parseInt(calc.select.value);
+    var fstream = fs.createWriteStream('keys.dat');
+    fstream.on('open', function(){
+        value = new Array()
 
-    // check input
-    if (isNaN(number)||(number <= 0)||isNaN(select)||(select <= 0)||(select > number))
-    {
-        calc.permutations.value = "Error";
-        return;
-    }
-  
-    var c = Math.round(permutations(number, select));
-    calc.permutations.value = c;
+        var a = new Array();                           // initialize
+        for (i = 0; i < select; i++)
+            a[i] = i + 1;                              // 1 - 2 - 3 - 4 - ...
 
-    msgWindow = window.open("","msgWindow","toolbar=no,status=no,menubar=yes,scrollbars=yes,width=550,height=400");
-    msgWindow.document.open();
-    msgWindow.document.writeln("<html><head><title>Listing</title></head>");
-    msgWindow.document.writeln("<body>");
-    msgWindow.document.writeln("<p><tt><sub>" + number + "</sub>P<sub>" + select + "</sub> = " + c + "</tt>");
-    msgWindow.document.writeln("<p>listing of permutations");
-    msgWindow.document.writeln("<p>");
-    msgWindow.document.writeln("<pre>");
+        while (true)
+        {
+            for (n = 0; n < select; n++)
+                value[n] = a[n];
 
-    value = new Array()
+            // for this combination, list permutations in lexicographical order
+            fstream.write(new Buffer(put_next(select)));
+            while (get_next(select))
+                fstream.write(new Buffer(put_next(select)));
 
-    var a = new Array();                           // initialize
-    for (i = 0; i < select; i++) 
-        a[i] = i + 1;                              // 1 - 2 - 3 - 4 - ...
+            // generate next combination in lexicographical order
+            i = select - 1;                            // start at last item
+            while (a[i] == (number - select + i + 1))  // find next item to increment
+                --i;
 
-    while (true)
-    {       
-        for (n = 0; n < select; n++) 
-            value[n] = a[n]; 
+            if (i < 0) break;                          // all done
+            ++a[i];                                    // increment
 
-        // for this combination, list permutations in lexicographical order
-        put_next(select);
-        while (get_next(select))
-            put_next(select);
+            for (j = i + 1; j < select; j++)           // do next combination
+                a[j] = a[i] + j - i;
+        }
 
-        // generate next combination in lexicographical order
-        i = select - 1;                            // start at last item        
-        while (a[i] == (number - select + i + 1))  // find next item to increment 
-            --i;
+        fstream.end();
+    });
 
-        if (i < 0) break;                          // all done
-        ++a[i];                                    // increment
-
-        for (j = i + 1; j < select; j++)           // do next combination 
-            a[j] = a[i] + j - i;
-    }
-
-    msgWindow.document.writeln("</pre>");
-    msgWindow.document.writeln("<p>All done!");
-    msgWindow.document.writeln("</body></html>");
-
-    msgWindow.document.close();
 }
 
 // compute the number of permutations of r objects from a set on n objects
@@ -80,11 +44,11 @@ function permutations( n, r )
     var c = parseInt("1");
     if (r > n) return 0;
     var d = n - r;
-    
+
     while (n > 0)
     {
         c = c * n;
-        --n; 
+        --n;
     }
 
     while (d)
@@ -102,18 +66,18 @@ var value;
 function get_next( k )
 {
     var i = k - 1;
-    while (value[i-1] >= value[i]) 
+    while (value[i-1] >= value[i])
         i--;
 
-    if (i < 1) return false;                       // all in reverse order 
+    if (i < 1) return false;                       // all in reverse order
 
     var j = k;
-    while (value[j-1] <= value[i-1]) 
+    while (value[j-1] <= value[i-1])
         j--;
 
     swap(i - 1, j - 1);
 
-    i++; 
+    i++;
     j = k;
 
     while (i < j)
@@ -135,7 +99,8 @@ function swap( a, b )
 
 function put_next( k )
 {
+    var result = [];
     for (i = 0; i < k; i++)
-        msgWindow.document.write("  " + value[i]);
-    msgWindow.document.writeln("");
+        result.push(value[i]);
+    return result;
 }

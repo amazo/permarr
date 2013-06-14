@@ -12,3 +12,8 @@ logs
 results
 
 npm-debug.log
+
+/node_modules/
+aws-config.json
+app-config.json
+*-config.json
